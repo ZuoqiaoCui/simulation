@@ -1,0 +1,68 @@
+---
+title: "simulation"
+author: "Zuoqiao Cui"
+date: "2022-10-31"
+output: html_document
+---
+```{r}
+library(tidyverse)
+set.seed(1)
+```
+
+```{r}
+sim_mean_sd = function(n, mu = 3, sigma = 4) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = mu, sd = sigma) #generate data from normal distribution
+  )
+  
+  sim_data %>% 
+    summarize(
+      mean = mean(x),
+      sigma = sd(x)
+    )
+}
+```
+simulate by running this line
+```{r}
+sim_mean_sd(30)
+```
+
+## simulate a lot
+
+let's start with a for loop
+
+```{r}
+output = vector("list",length = 100)
+for (i in 1:100){
+  output[[i]] = sim_mean_sd(30)
+}
+
+bind_rows(output)
+```
+
+let's use a loop function.
+
+```{r}
+sim_results = 
+  rerun(100, sim_mean_sd(30)) %>% 
+  bind_rows()
+```
+
+let's look at results...
+
+```{r}
+sim_results %>% 
+  ggplot(aes(x = mean)) + geom_density()
+
+sim_results %>% 
+  summarise(
+    avg_samp_mean = mean(mean),
+    sd_samp_mean = sd(mean)
+  )
+
+sim_results %>% 
+  ggplot(aes(x = sigma)) + geom_density()
+```
+
+
