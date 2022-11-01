@@ -9,6 +9,177 @@ library(tidyverse)
 set.seed(1)
 ```
 
+
+```{r}
+z_scores = function(x){
+  if(!is.numeric(x)){
+    stop("Z scores only work for numbers")
+  }
+  
+  if(length(x)<3){
+    stop(
+      "z scores only work for numbers less than 3"
+    )
+  }
+  
+ z = (x - mean(x))/sd(x)
+ z
+}
+```
+
+## Multiple outputs
+```{r}
+mean_and_sd = function(x){
+  mean_x = mean(x)
+  sd_x = sd(x)
+  tibble(
+      mean = mean_x,
+      sd = sd_x
+  )
+}
+```
+loop
+```{r}
+list_norm = 
+  list(
+    a = rnorm(20,5,4),
+    b = rnorm(20,-12,3),
+    c = rnorm(20,17,.4),
+    d = rnorm(20,100,1)
+  )
+```
+
+
+```{r}
+mean_and_sd(list_norm[[1]])
+mean_and_sd(list_norm[[2]])
+mean_and_sd(list_norm[[3]])
+mean_and_sd(list_norm[[4]])
+```
+
+loop instead
+
+```{r}
+output = vector("list",length = 4)
+for(i in 1:4)
+output[[i]] = mean_and_sd(list_norm[[i]])
+
+output
+```
+
+map
+```{r}
+map(list_norm,mean_and_sd)
+```
+
+other function?
+```{r}
+map(list_norm,median)
+map(list_norm,var)
+map(list_norm,summary)
+```
+
+```{r}
+map_dbl(list_norm,median)
+map_df(list_norm,mean_and_sd)
+```
+
+## list columns
+
+```{r}
+listcol_df = 
+  tibble(
+    name = c("a","b","c","d"),
+    norm = list_norm
+  )
+
+listcol_df[["norm"]] #select something from the df
+output = map(listcol_df[["norm"]],mean_and_sd)
+```
+
+add list columns and then what
+
+```{r}
+listcol_df %>% 
+  mutate(
+    m_sd = map(norm,mean_and_sd)
+  ) %>% 
+  select(-norm)
+```
+
+## realistic....
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USC00519397", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USC00519397 = "Waikiki_HA",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+
+```{r}
+weather_nest_df = weather_df %>% 
+  nest(data = date:tmin)
+```
+
+```{r}
+weather_nest_df[["data"]]
+```
+
+
+```{r}
+weather_nest_df[["data"]][[1]]
+
+lm(tmax ~ tmin, data = weather_nest_df[["data"]][[1]])
+```
+
+```{r}
+weather_lm = function(df){
+  lm(tmax ~ tmin, data = df)
+}
+
+weather_lm(weather_nest_df[["data"]][[1]])
+
+map(weather_nest_df[["data"]],weather_lm)
+```
+
+tidy way 
+```{r}
+weather_nest_df %>% 
+  mutate(
+    model = map(data,weather_lm)
+  )
+```
+
+unnesting
+
+```{r}
+weather_nest_df %>% 
+  unnest(data)
+```
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 sim_mean_sd = function(n, mu = 3, sigma = 4) {
   
